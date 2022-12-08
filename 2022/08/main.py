@@ -24,6 +24,8 @@ def solve_1(d):
     )
 
 def calculate_scenic_score(d, i, j):
+    if i==0 or j==0 or i==len(d) or j==len(d[i]):
+        return 0
     scores = [0,0,0,0]
     for ii in range(i-1,-1, -1):
         scores[0]+=1
