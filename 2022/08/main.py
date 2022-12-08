@@ -11,7 +11,7 @@ with open(os.path.join(dir_path, "./data"), 'r') as fi:
 def is_visible_from_outside(d, i, j):
     min_size=d[i][j]
 
-    return not all([
+    return any([
         any(d[ii][j]>= min_size for ii in range(0, i)),
         any(d[ii][j]>= min_size for ii in range(i+1, len(d))),
         any(d[i][jj]>= min_size for jj in range(0, j)),
