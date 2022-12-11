@@ -18,7 +18,7 @@ def parse(data):
             elif "Starting items" in line:
                 monkey_output["items"] = list(int(i) for i in line.split(':')[1].split(','))
             elif "Operation" in line:
-                monkey_output['operation'] = line.split('=')[1]
+                exec(f"monkey_output['operation'] = lambda old : {line.split('=')[1]}")
             elif "Test" in line:
                 monkey_output['test'] = int(line.split(' ')[-1])
             elif "If true" in line:
@@ -37,8 +37,6 @@ def solve(d, rounds=20, worry_divider=3):
 
     # the numbers will be too big to handle : we only needs the numbers up to the least common multiple used in the tests.
     common_multiple= math.lcm(*[monkey['test'] for monkey in monkeys])
-
-    print(f"common multiple : {common_multiple}")
     
     hitory_item_inspected=[0] * len(monkeys)
     for round in range(rounds):
@@ -48,12 +46,12 @@ def solve(d, rounds=20, worry_divider=3):
             hitory_item_inspected[monkey_id]+=len(monkey['items'])
             for item in monkey['items']:
                 # reduce the value of the item, to handle int overflow
+                # check that it is strictly superior to the LCM, to avoid transforming the value to a 0.
                 if item > common_multiple:
                     item = item % common_multiple
 
                 # monkey inspect the item
-                old=item
-                item = eval(monkey['operation'])
+                item = monkey['operation'](item)
                 # monkey didn't damage the item, so less worry on it
                 item = int(item / worry_divider)
                 if item % monkey['test'] == 0:
