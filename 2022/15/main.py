@@ -2,6 +2,8 @@ import os, math, time, re
 
 from Point import Point
 
+from multiprocessing import Pool, SimpleQueue
+from functools import partial
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # read data as a single string
@@ -48,19 +50,12 @@ def get_positions_cannot_have_beacon(list_sensors, y, remove_existing_beacons=Tr
     points_x_cannot_have_beacon=set()
     # calculate minX and maxX that one of the detected beacon cannot be
     for sensor in list_sensors:
-        t0=time.time()
         distance = sensor["beacon"].distance_manhattan(sensor["sensor"])
-        t1=time.time()
         intersections = calculate_intersections(sensor["sensor"], distance, y)
-        t2=time.time()
         if len(intersections) == 2:    
             points_x_cannot_have_beacon.update(range(intersections[0].x, intersections[1].x+1))
         elif len(intersections) == 1:
             points_x_cannot_have_beacon.add(intersections[0].x)
-        t3=time.time()
-
-        print("get_positions", t1-t0, t2-t1, t3-t2, len(intersections))
-
     # remove beacons from output
     if remove_existing_beacons:
         for sensor in list_sensors:
@@ -79,20 +74,40 @@ def solve_1(d, y=2000000):
 
 def solve_2(d, max_range=4000000):
     list_sensors = parse(d)
-    possible_x = set(range(max_range))
-    for y in range(max_range):
-        t0 = time.time()
-        points_x_cannot_have_beacon=get_positions_cannot_have_beacon(list_sensors, y, remove_existing_beacons=False)
 
-        t1 = time.time()
-        found_x = possible_x - points_x_cannot_have_beacon
-        t2 = time.time()
-        if len(found_x) != 0:
-            return found_x.pop() * 4000000 + y
+    for sensor in list_sensors:
+        sensor["distance"] = sensor["sensor"].distance_manhattan(sensor["beacon"])
+
+    with Pool() as pool:
+        results = pool.imap_unordered(partial(solve_2_one_line, list_sensors=list_sensors, max_range=max_range), range(max_range))
+  
+        return next(value for value in results if value is not None)
+
+    # for y in range(max_range):
         
-        print(f"{y=} {t1-t0} {t2-t1}")
+    #     out=solve_2_one_line(y,list_sensors, max_range)
+    #     if out is not None:
+    #         return out
 
     return None
+
+def solve_2_one_line(y,list_sensors, max_range):
+    """Check if we can find a solution for the solution 2 on the line y
+        Used for multiprocessing purposes
+    """
+    x=0
+    while x <= max_range:
+        # check if (x,y) is in one of the sensors
+        for sensor in list_sensors:
+            # if one of the sensor is in matching distance : go to the end of its range to speed things up
+            if sensor["sensor"].distance_manhattan(x, y) <= sensor["distance"]:
+                intersections = calculate_intersections(sensor["sensor"], sensor["distance"], y)
+                x = intersections[-1].x
+                break
+        else:
+            return x * 4000000 + y
+        x+=1
+    return 
 
 if solve_1(test_data, 10) != 26:
     print(f"test : {solve_1(test_data, 10)} != 26")
@@ -102,8 +117,9 @@ if solve_2(test_data, 20) != 56000011:
     print(f"test : {solve_2(test_data, 20)} != 56000011")
     raise Exception("Bad result on test data")
 
+print("tests passed")
 
 print(f"result 1: {solve_1(data)}") 
 # 5394083 too high
 # 5733733
-print(f"result 2: {solve_2(data)}")
+print(f"result 2: {solve_2(data)}") # 11583882601918
