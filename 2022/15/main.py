@@ -2,7 +2,7 @@ import os, math, time, re
 
 from Point import Point
 
-from multiprocessing import Pool, SimpleQueue
+from multiprocessing import Pool, SimpleQueue, cpu_count
 from functools import partial
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -78,18 +78,22 @@ def solve_2(d, max_range=4000000):
     for sensor in list_sensors:
         sensor["distance"] = sensor["sensor"].distance_manhattan(sensor["beacon"])
 
+    # use multiprocessing to find the solution, as it can be quite long
+    # reminder to self: thread take a long time to set up & destroy - if needed, use an intermediary function to handle a range of events.
     with Pool() as pool:
-        results = pool.imap_unordered(partial(solve_2_one_line, list_sensors=list_sensors, max_range=max_range), range(max_range))
+        gradient = max_range / cpu_count()
+        results = pool.imap_unordered(
+            partial(solve_2_n_lines, list_sensors=list_sensors, max_range=max_range),
+            [range(int(gradient * i), int(gradient*(i+1)+1)) for i in range(cpu_count())]
+        )
   
         return next(value for value in results if value is not None)
 
-    # for y in range(max_range):
-        
-    #     out=solve_2_one_line(y,list_sensors, max_range)
-    #     if out is not None:
-    #         return out
-
-    return None
+def solve_2_n_lines(list_y, list_sensors, max_range):
+    for y in list_y:
+        out = solve_2_one_line(y, list_sensors, max_range)
+        if out is not None:
+            return out
 
 def solve_2_one_line(y,list_sensors, max_range):
     """Check if we can find a solution for the solution 2 on the line y
