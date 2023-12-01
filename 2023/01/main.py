@@ -21,13 +21,30 @@ def adventofcode_day1_line(line):
     return int(f"{first}{last}")
 
 def adventofcode_day1(text):
-    return sum(adventofcode_day1(line) for line in ftext.split("\n"))
+    return sum(adventofcode_day1_line(line) for line in text.split("\n"))
 
 # example
-adventofcode_day1_full("""1abc2
+adventofcode_day1("""1abc2
 pqr3stu8vwx
 a1b2c3d4e5f
 treb7uchet""")
 
 # real
-adventofcode_day1_full(data)
+adventofcode_day1(data)
+
+def preprocess(line):
+    return line.replace("one","one1one").replace("two","two2two").replace("three","three3three").replace("four","four4four").replace("five","five5five").replace("six","six6six").replace("seven","seven7seven").replace("eight","eight8eight").replace("nine","nine9nine").replace("zero","zero0zero")
+
+def adventofcode_day1_part2(text):
+    return sum(adventofcode_day1_line(preprocess(line)) for line in text.split("\n"))
+
+adventofcode_day1_part2("""two1nine
+eightwothree
+abcone2threexyz
+xtwone3four
+4nineeightseven2
+zoneight234
+7pqrstsixteen""")
+
+# real
+adventofcode_day1_part2(data)
